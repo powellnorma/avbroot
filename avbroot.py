@@ -51,7 +51,7 @@ def get_images(manifest):
 
 
 def patch_ota_payload(f_in, f_out, file_size, magisk, privkey_avb, privkey_ota,
-                      cert_ota):
+                      cert_ota, custom_kernel=None):
     with tempfile.TemporaryDirectory() as temp_dir:
         extract_dir = os.path.join(temp_dir, 'extract')
         patch_dir = os.path.join(temp_dir, 'patch')
@@ -67,6 +67,8 @@ def patch_ota_payload(f_in, f_out, file_size, magisk, privkey_avb, privkey_ota,
         ota.extract_images(f_in, manifest, blob_offset, extract_dir, images)
 
         boot_patches = [boot.MagiskRootPatch(magisk)]
+        if custom_kernel:
+            boot_patches.insert(0, boot.CustomKernelPatch(custom_kernel))
         vendor_boot_patches = [boot.OtaCertPatch(magisk, cert_ota)]
 
         # Older devices don't have a vendor_boot
@@ -123,7 +125,7 @@ def patch_ota_payload(f_in, f_out, file_size, magisk, privkey_avb, privkey_ota,
 
 
 def patch_ota_zip(f_zip_in, f_zip_out, magisk, privkey_avb, privkey_ota,
-                  cert_ota):
+                  cert_ota, custom_kernel=None):
     with (
         zipfile.ZipFile(f_zip_in, 'r') as z_in,
         zipfile.ZipFile(f_zip_out, 'w') as z_out,
@@ -186,6 +188,7 @@ def patch_ota_zip(f_zip_in, f_zip_out, magisk, privkey_avb, privkey_ota,
                         privkey_avb,
                         privkey_ota,
                         cert_ota,
+                        custom_kernel
                     )
 
                 elif info.filename == PATH_PROPERTIES:
@@ -238,6 +241,7 @@ def patch_subcommand(args):
                 dec_privkey_avb,
                 dec_privkey_ota,
                 cert_ota,
+                args.custom_kernel,
             )
 
             print_status('Signing OTA zip')
@@ -275,6 +279,8 @@ def parse_args():
                        help='Path to new raw payload or OTA zip')
     patch.add_argument('--magisk', required=True,
                        help='Path to Magisk API')
+    patch.add_argument('--custom-kernel', required=False,
+                       help='Path to custom kernel zImage')
     patch.add_argument('--privkey-avb', required=True,
                        help='Private key for signing root vbmeta image')
     patch.add_argument('--privkey-ota', required=True,

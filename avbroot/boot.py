@@ -35,6 +35,18 @@ class BootImagePatch:
     def patch(self, image_file, temp_dir):
         raise NotImplementedError()
 
+class CustomKernelPatch(BootImagePatch):
+    '''
+    Change kernel in boot image using 'abootimg -u'
+    '''
+
+    def __init__(self, custom_kernel):
+        self.custom_kernel = custom_kernel
+
+    def __call__(self, image_file):
+        subprocess.check_call(
+            ['abootimg', '-u', image_file, '-k', self.custom_kernel],
+        )
 
 class MagiskRootPatch(BootImagePatch):
     '''
