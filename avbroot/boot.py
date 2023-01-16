@@ -37,16 +37,33 @@ class BootImagePatch:
 
 class CustomKernelPatch(BootImagePatch):
     '''
-    Change kernel in boot image using 'abootimg -u'
+    Replace the kernel within the boot image.
     '''
 
-    def __init__(self, custom_kernel):
+    EXTRACT_MAP = {
+        'lib/x86/libmagiskboot.so': {'dest': 'magiskboot'},
+    }
+
+    def __init__(self, magisk_apk, custom_kernel):
+        super().__init__(magisk_apk, self.EXTRACT_MAP)
         self.custom_kernel = custom_kernel
 
-    def __call__(self, image_file):
-        subprocess.check_call(
-            ['abootimg', '-u', image_file, '-k', self.custom_kernel],
-        )
+    def patch(self, image_file, temp_dir):
+        def run(*args):
+            subprocess.check_call(['./magiskboot', *args], cwd=temp_dir)
+
+        os.chmod(os.path.join(temp_dir, 'magiskboot'), 0o755)
+
+        # Unpack the boot image
+        run('unpack', image_file)
+
+        # Replace the kernel image
+        shutil.copyfile(self.custom_kernel, f'{temp_dir}/kernel')
+
+        # Repack image
+        run('repack', image_file)
+
+        shutil.copyfile(os.path.join(temp_dir, 'new-boot.img'), image_file)
 
 class MagiskRootPatch(BootImagePatch):
     '''

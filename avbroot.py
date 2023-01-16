@@ -68,7 +68,7 @@ def patch_ota_payload(f_in, f_out, file_size, magisk, privkey_avb, privkey_ota,
 
         boot_patches = [boot.MagiskRootPatch(magisk)]
         if custom_kernel:
-            boot_patches.insert(0, boot.CustomKernelPatch(custom_kernel))
+            boot_patches.insert(0, boot.CustomKernelPatch(magisk, custom_kernel))
         vendor_boot_patches = [boot.OtaCertPatch(magisk, cert_ota)]
 
         # Older devices don't have a vendor_boot
